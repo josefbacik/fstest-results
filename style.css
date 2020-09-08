@@ -1,0 +1,33 @@
+table.results {
+	float: left;
+	max-width: 300px;
+}
+
+table.runs {
+	float: left;
+	max-width: 500px;
+}
+
+th {
+	height: 50px;
+}
+
+th, td {
+	padding: 15px;
+	text-align: left;
+}
+
+th.passing {
+	background-color: #4CAF50;
+	color: white;
+}
+
+th.failing {
+	background-color: Tomato;
+	color: white;
+}
+
+th.runs {
+	background-color: Pink;
+	color: black;
+}

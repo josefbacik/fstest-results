@@ -1,0 +1,189 @@
+import os
+from dateutil.parser import parse as dparse
+import re
+from datetime import datetime, timedelta
+
+PASS = 0
+NOTRUN = 1
+FAIL = 2
+DMESG = 3
+
+class Test:
+    PASS = 0
+    NOTRUN = 1
+    FAIL = 2
+
+    def __init__(self, name):
+        self.name = name
+        self.passes = []
+        self.fails = []
+        self.notruns = []
+
+    def add_result(self, run, status):
+        if status == self.PASS:
+            self.passes.append(run)
+        elif status == self.NOTRUN:
+            self.notruns.append(run)
+        elif status == self.FAIL:
+            self.fails.append(run)
+        else:
+            raise Exception("Invalid test status")
+
+    def sort_results(self):
+        self.passes = sorted(self.passes, key=lambda r: r.date)
+        self.notruns = sorted(self.notruns, key=lambda r: r.date)
+        self.fails = sorted(self.fails, key=lambda r: r.date)
+
+    def __repr__(self):
+        return 'name={} passes={} notruns={} fails={}'.format(self.name,
+                len(self.passes), len(self.notruns), len(self.fails))
+
+class TestRun:
+    def __init__(self, path, username, hostname, date):
+        self.dir = path
+        self.username = username
+        self.hostname = hostname
+        self.datestr = date
+        self.date = dparse(date)
+
+    def __repr__(self):
+        return 'path={} username={} hostname={} date={}'.format(self.dir,
+                self.username, self.hostname, self.date)
+
+    def recent(self):
+        delta = datetime.now() - self.date
+        return delta.days <= 7
+
+def parse_check_log(run, tests, times):
+    ran = []
+    failed = []
+    notrun = []
+    with open(run.dir + "/check.log") as fp:
+        for line in fp:
+            v = line.split(' ')
+            if v[0] == "Ran:":
+                ran = v[1:]
+            elif v[0] == "Not run:":
+                notrun = v[1:]
+            elif v[0] == "Failures:":
+                failed = v[1:]
+    for i in ran:
+        i = i.rstrip()
+        if i not in tests:
+            tests[i] = Test(i)
+        if i in failed:
+            tests[i].add_result(run, Test.FAIL)
+        elif i in notrun:
+            tests[i].add_result(run, Test.NOTRUN)
+        else:
+            tests[i].add_result(run, Test.PASS)
+
+def parse_check_time(filename):
+    ret = {}
+    with open(filename) as fp:
+        for line in fp:
+            v = line.split(' ')
+            ret[v[0]] = int(v[1])
+    return ret
+
+def empty_table(cols):
+    return '<tr><td colspan="{}">Empty, congrats?</td>M/tr>'
+
+def create_test_table(instr, label, thname):
+    if instr == "":
+        instr = empty_table(2)
+    ret = '<table class="results"><tr><th class="{}" colspan="2">{}</th></tr>'.format(
+            thname, label)
+    ret += "<tr><th>Name</th><th>Date</th></tr>"
+    ret += instr
+    ret += "</table>"
+    return ret
+
+def create_runs_table(instr, label):
+    if instr == "":
+        instr = empty_table(3)
+    ret = '<table class="runs"><tr><th class="runs" colspan="3">{}</th></tr>'.format(label)
+    ret += "<tr><th>Username</th><th>Hostname</th><th>Date</th></tr>"
+    ret += instr
+    ret += "</table>"
+    return ret
+
+def create_index(tests, runs):
+    fail_table = ""
+    pass_table = ""
+    runs_table = ""
+
+    fail_cnt = 0
+    pass_cnt = 0
+
+    for k,v in tests.items():
+        v.sort_results()
+        if len(v.fails) and v.fails[0].recent():
+            fail_cnt += 1
+            if fail_cnt >= 10:
+                continue
+            fail_table += "<tr><td>{}</td><td>{}</td></tr>".format(v.name,
+                    v.fails[0].date)
+        elif len(v.passes):
+            pass_cnt += 1
+            if pass_cnt >= 10:
+                continue
+            pass_table += "<tr><td>{}</td><td>{}</td></tr>".format(v.name,
+                    v.passes[0].date)
+
+    runs_cnt = 0
+    for r in runs:
+        if runs_cnt >= 10:
+            break
+        runs_table += "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format(
+                r.username, r.hostname, r.date)
+        runs_cnt += 1
+
+    f = open("template.html")
+    template = f.read()
+    f.close()
+
+    fail_table = create_test_table(fail_table, "Failures ({} total)".format(fail_cnt),
+            "failing")
+    pass_table = create_test_table(pass_table, "Passing ({} total)".format(pass_cnt),
+            "passing")
+    runs_table = create_runs_table(runs_table, "Runs ({} total)".format(len(runs)))
+
+    template = template.replace('FAILURE_TABLE', fail_table)
+    template = template.replace('PASS_TABLE', pass_table)
+    template = template.replace('RUNS_TABLE', runs_table)
+
+    f = open(os.environ["RESULTS_DIR"] + "/index.html", "w")
+    f.write(template)
+    f.close()
+
+def create_summary(run):
+    ret = '<table><tr><th colspan="2">Results</th></tr>'
+    ret += '<tr><th>Status</th><th>Count</th></tr>'
+    ret += '<tr><td>Pass</td><td>{}</td>'.format(len(run.passes))
+    ret += '<tr><td>Fail</td><td>{}</td>'.format(len(run.fails))
+    ret += '<tr><td>Not Run</td><td>{}</td>'.format(len(run.notruns))
+    return ret
+
+def create_run_page(run):
+    f = open("testrun-template.html")
+    template = f.read()
+    f.close()
+
+    template = template.replace('SUMMARY_TABLE', create_summary(run))
+
+    for
+runs = []
+for (dirpath, subdirs, filenames) in os.walk(os.environ['RESULTS_DIR']):
+    if "check.log" in filenames:
+        vals = dirpath.split('/')
+        runs.append(TestRun(dirpath, vals[-3], vals[-2], vals[-1]))
+
+runs = sorted(runs, key=lambda r: r.date)
+
+tests = {}
+for r in runs:
+    times = parse_check_time(r.dir + "/check.time")
+    parse_check_log(r, tests, times)
+
+create_index(tests, runs)
