@@ -1,3 +1,23 @@
+a {color:blue}
+a:link{color:inherit}
+a:active{color:inherit}
+a:visited{color:inherit}
+a:hover{color:inherit}
+
+table.summary th {
+    text-align: center;
+}
+
+table.summary td {
+    text-align: left;
+    padding: 5px;
+}
+
+table.results_time {
+    float: left;
+    max-width: 500px;
+}
+
 table.results {
 	float: left;
 	max-width: 300px;
@@ -24,6 +44,11 @@ th.passing {
 
 th.failing {
 	background-color: Tomato;
+	color: white;
+}
+
+th.notrun {
+	background-color: Grey;
 	color: white;
 }
 
