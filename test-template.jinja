@@ -1,0 +1,37 @@
+<html>
+<head>
+	<title>{{ test.name }} results</title>
+	<link rel="stylesheet" href="../style.css"/>
+</head>
+<body>
+<div>
+  <div>
+    <table class="summary">
+      <tr><th colspan="2">Summary</th></tr>
+      <tr><th>Status</th><th>Count</th></tr>
+      <tr><td>Pass</td><td>{{ test.passes|length }}</td></tr>
+      <tr><td>Fails</td><td>{{ test.fails|length }}</td></tr>
+      <tr><td>Not Run</td><td>{{ test.notruns|length }}</td></tr>
+    </table>
+  </div>
+  <div>
+    <table class="runs">
+      <tr><th class="runs" colspan="4"> Runs ({{ runs|length }} total)</th></tr>
+      <tr><th>Username</th><th>Hostname</th><th>Tests run</th><th>Date</th></tr>
+      {% for r in runs %}
+        {% if r in test.fails %}
+          <tr class="failing">
+        {% elif r in test.passes %}
+          <tr class="passing">
+        {% else %}
+          <tr class="notrun">
+        {% endif %}
+          <td>{{ r.username }}</td><td>{{ r.hostname }}</td>
+          <td>{{ r.total_run() }}</td><td><a href="{{ r.link_path() }}">{{ r.date }}</a></td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+</body>
+</html>
