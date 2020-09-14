@@ -30,7 +30,12 @@ table.results_output {
 
 table.runs {
 	float: left;
-	max-width: 500px;
+	max-width: 700px;
+}
+
+table.runs_time {
+	float: left;
+	max-width: 900px;
 }
 
 th {
@@ -42,17 +47,20 @@ th, td {
 	text-align: left;
 }
 
-th.passing {
+.passing th,
+.passing td {
 	background-color: #4CAF50;
 	color: white;
 }
 
-th.failing {
+.failing th,
+.failing td {
 	background-color: Tomato;
 	color: white;
 }
 
-th.notrun {
+.notrun th,
+.notrun td {
 	background-color: Grey;
 	color: white;
 }

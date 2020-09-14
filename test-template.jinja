@@ -15,9 +15,9 @@
     </table>
   </div>
   <div>
-    <table class="runs">
-      <tr><th class="runs" colspan="4"> Runs ({{ runs|length }} total)</th></tr>
-      <tr><th>Username</th><th>Hostname</th><th>Tests run</th><th>Date</th></tr>
+    <table class="runs_time">
+      <tr><th class="runs" colspan="6"> Runs ({{ runs|length }} total)</th></tr>
+      <tr><th>Username</th><th>Hostname</th><th>Config</th><th>Run time</th><th>Tests run</th><th>Date</th></tr>
       {% for r in runs %}
         {% if r in test.fails %}
           <tr class="failing">
@@ -27,6 +27,8 @@
           <tr class="notrun">
         {% endif %}
           <td>{{ r.username }}</td><td>{{ r.hostname }}</td>
+          <td>{{ r.config }}</td>
+          <td>{{ r.times[test.name] }}</td>
           <td>{{ r.total_run() }}</td><td><a href="{{ r.link_path() }}">{{ r.date }}</a></td>
         </tr>
       {% endfor %}

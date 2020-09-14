@@ -14,6 +14,7 @@ class Test:
         self.passes = []
         self.fails = []
         self.notruns = []
+        self.times = []
 
     def add_result(self, run, status):
         if status == self.PASS:
@@ -35,10 +36,11 @@ class Test:
                 len(self.passes), len(self.notruns), len(self.fails))
 
 class TestRun:
-    def __init__(self, path, username, hostname, date):
+    def __init__(self, path, username, hostname, config, date):
         self.dir = path
         self.username = username
         self.hostname = hostname
+        self.config = config
         self.datestr = date
         self.date = dparse(date)
         self.passes = []
@@ -64,21 +66,21 @@ class TestRun:
             raise Exception("Invalid test status")
 
     def _rel_path(self):
-        return '/'.join(self.dir.split('/')[-4:])
+        return '/'.join(self.dir.split('/')[-5:])
 
     def link_path(self):
-        return self._rel_path() + "/index.html"
+        return "/" + self._rel_path() + "/index.html"
 
     def total_run(self):
         return len(self.fails) + len(self.notruns) + len(self.passes)
 
     def bad_output(self, testname):
-        if os.path.exists(self.dir + "/{}.out.bad".format(testname)):
+        if os.path.exists(self.dir + "/{}.out.bad.html".format(testname)):
             return True
         return False
 
     def dmesg_output(self, testname):
-        if os.path.exists(self.dir + "/{}.dmesg".format(testname)):
+        if os.path.exists(self.dir + "/{}.dmesg.html".format(testname)):
             return True
         return False
 
@@ -97,7 +99,7 @@ def parse_check_log(run, tests):
                 failed = v[1:]
     for i in ran:
         k = i.rstrip()
-        if i not in tests:
+        if k not in tests:
             tests[k] = Test(k)
         if i in failed:
             tests[k].add_result(run, Test.FAIL)
@@ -120,18 +122,19 @@ def parse_check_time(filename):
 env = Environment(loader=FileSystemLoader('.'))
 index_template = env.get_template('template.jinja')
 run_template = env.get_template('testrun-template.jinja')
+test_template = env.get_template('test-template.jinja')
 
 runs = []
 for (dirpath, subdirs, filenames) in os.walk(os.environ['RESULTS_DIR']):
     if "check.log" in filenames:
         vals = dirpath.split('/')
-        runs.append(TestRun(dirpath, vals[-3], vals[-2], vals[-1]))
+        runs.append(TestRun(dirpath, vals[-4], vals[-3], vals[-2], vals[-1]))
 
 runs = sorted(runs, key=lambda r: r.date)
-
 tests = {}
 for r in runs:
     times = parse_check_time(r.dir + "/check.time")
+    r.times = times
     parse_check_log(r, tests)
     f = open(r.dir + "/index.html", "w")
     f.write(run_template.render(run=r))
@@ -145,6 +148,18 @@ for k,v in tests.items():
         fails.append(v)
     elif len(v.passes):
         passes.append(v)
+
+    test_runs = v.passes + v.fails
+    test_runs = sorted(test_runs, key=lambda r: r.date)
+
+    try:
+        os.mkdir(os.environ["RESULTS_DIR"] + "/" + os.path.dirname(k))
+    except FileExistsError:
+        pass
+
+    f = open(os.environ["RESULTS_DIR"] + "/" + k + ".html", "w")
+    f.write(test_template.render(test=v, runs=test_runs))
+    f.close()
 
 f = open(os.environ["RESULTS_DIR"] + "/index.html", "w")
 f.write(index_template.render(fails=fails, passes=passes, runs=runs))
