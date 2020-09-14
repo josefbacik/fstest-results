@@ -1,0 +1,46 @@
+<html>
+<head>
+    <title>fstests results</title>
+    <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<table class="results">
+  <tr>
+    <th class="failing" colspan="2">Failures ({{ fails|length }} total)</th>
+  </tr>
+  <tr>
+    <th>Name</th><th>date</th>
+  </tr>
+  {% for t in fails[:10] %}
+    <tr>
+      <td>{{ t.name }}</td>
+      <td><a href="{{ t.fails[0].link_path() }}">{{ t.fails[0].date }}</a></td>
+    </tr>
+  {% endfor %}
+</table>
+<table class="results_time">
+  <tr>
+    <th class="passing" colspan="3">Passing ({{ passes|length }} total)</th>
+  </tr>
+  <tr>
+    <th>Name</th><th>Time spent</th><th>Date</th>
+  </tr>
+  {% for t in passes[:10] %}
+    <tr>
+      <td>{{ t.name }}</td>
+      <td><a href="{{ t.passes[0].link_path() }}">{{ t.passes[0].date }}</a></td>
+    </tr>
+  {% endfor %}
+</table>
+<table class="runs">
+  <tr><th class="runs" colspan="4"> Runs ({{ runs|length }} total)</th></tr>
+  <tr><th>Username</th><th>Hostname</th><th>Tests run</th><th>Date</th></tr>
+  {% for r in runs[:10] %}
+    <tr>
+      <td>{{ r.username }}</td><td>{{ r.hostname }}</td>
+      <td>{{ r.total_run() }}</td><td><a href="{{ r.link_path() }}">{{ r.date }}</a></td>
+    </tr>
+  {% endfor %}
+</table>
+</body>
+</html>

@@ -23,6 +23,11 @@ table.results {
 	max-width: 300px;
 }
 
+table.results_output {
+    float: left;
+    max-width: 700px;
+}
+
 table.runs {
 	float: left;
 	max-width: 500px;

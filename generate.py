@@ -2,11 +2,7 @@ import os
 from dateutil.parser import parse as dparse
 import re
 from datetime import datetime, timedelta
-
-PASS = 0
-NOTRUN = 1
-FAIL = 2
-DMESG = 3
+from jinja2 import Template,Environment,FileSystemLoader
 
 class Test:
     PASS = 0
@@ -67,12 +63,24 @@ class TestRun:
         else:
             raise Exception("Invalid test status")
 
-    def link(self):
-        rel_path = '/'.join(self.dir.split('/')[-4:]) + "/index.html"
-        return '<a href="{}">{}</a>'.format(rel_path, self.date)
+    def _rel_path(self):
+        return '/'.join(self.dir.split('/')[-4:])
+
+    def link_path(self):
+        return self._rel_path() + "/index.html"
 
     def total_run(self):
         return len(self.fails) + len(self.notruns) + len(self.passes)
+
+    def bad_output(self, testname):
+        if os.path.exists(self.dir + "/{}.out.bad".format(testname)):
+            return True
+        return False
+
+    def dmesg_output(self, testname):
+        if os.path.exists(self.dir + "/{}.dmesg".format(testname)):
+            return True
+        return False
 
 def parse_check_log(run, tests):
     ran = []
@@ -109,139 +117,9 @@ def parse_check_time(filename):
             ret[v[0].rstrip()] = int(v[1])
     return ret
 
-def empty_table(cols):
-    return '<tr><td colspan="{}">Empty, congrats?</td></tr>'
-
-def create_test_table(instr, label, thname):
-    if instr == "":
-        instr = empty_table(2)
-    ret = '<table class="results"><tr><th class="{}" colspan="2">{}</th></tr>'.format(
-            thname, label)
-    ret += "<tr><th>Name</th><th>Date</th></tr>"
-    ret += instr
-    ret += "</table>"
-    return ret
-
-def create_test_table_time(instr, label, thname):
-    if instr == "":
-        instr = empty_table(3)
-    ret = '<table class="results_time"><tr><th class="{}" colspan="3">{}</th></tr>'.format(
-            thname, label)
-    ret += "<tr><th>Name</th><th>Date</th><th>Run time</th></tr>"
-    ret += instr
-    ret += "</table>"
-    return ret
-
-def create_runs_table(instr, label):
-    if instr == "":
-        instr = empty_table(4)
-    ret = '<table class="runs"><tr><th class="runs" colspan="4">{}</th></tr>'.format(label)
-    ret += "<tr><th>Username</th><th>Hostname</th><th>Tests Run</th><th>Date</th></tr>"
-    ret += instr
-    ret += "</table>"
-    return ret
-
-def test_result_entry(name, date):
-    return "<tr><td>{}</td><td>{}</td></tr>".format(name, date)
-
-def test_result_entry_time(name, date, time):
-    return "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format(name, date, time)
-
-def test_run_entry(r):
-    return "<tr><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>".format(
-                r.username, r.hostname, r.total_run(), r.link())
-
-def create_index(tests, runs):
-    fail_table = ""
-    pass_table = ""
-    runs_table = ""
-
-    fail_cnt = 0
-    pass_cnt = 0
-
-    for k,v in tests.items():
-        v.sort_results()
-        if len(v.fails) and v.fails[0].recent():
-            fail_cnt += 1
-            if fail_cnt >= 10:
-                continue
-            fail_table += test_result_entry(v.name, v.fails[0].link())
-        elif len(v.passes):
-            pass_cnt += 1
-            if pass_cnt >= 10:
-                continue
-            pass_table += test_result_entry(v.name, v.passes[0].link())
-
-    runs_cnt = 0
-    for r in runs:
-        if runs_cnt >= 10:
-            break
-        runs_table += test_run_entry(r)
-        runs_cnt += 1
-
-    f = open("template.html")
-    template = f.read()
-    f.close()
-
-    fail_table = create_test_table(fail_table, "Failures ({} total)".format(fail_cnt),
-            "failing")
-    pass_table = create_test_table(pass_table, "Passing ({} total)".format(pass_cnt),
-            "passing")
-    runs_table = create_runs_table(runs_table, "Runs ({} total)".format(len(runs)))
-
-    template = template.replace('FAILURE_TABLE', fail_table)
-    template = template.replace('PASS_TABLE', pass_table)
-    template = template.replace('RUNS_TABLE', runs_table)
-
-    f = open(os.environ["RESULTS_DIR"] + "/index.html", "w")
-    f.write(template)
-    f.close()
-
-def create_summary(run):
-    ret = '<table class="summary"><tr><th colspan="2">Summary</th></tr>'
-    ret += '<tr><th>Status</th><th>Count</th></tr>'
-    ret += '<tr><td>Pass</td><td>{}</td></tr>'.format(len(run.passes))
-    ret += '<tr><td>Fail</td><td>{}</td></tr>'.format(len(run.fails))
-    ret += '<tr><td>Not Run</td><td>{}</td></tr>'.format(len(run.notruns))
-    ret += '</table>'
-    return ret
-
-def create_run_page(run, times):
-    fail_table = ""
-    pass_table = ""
-    notruns_table = ""
-
-    f = open("testrun-template.html")
-    template = f.read()
-    f.close()
-
-    template = template.replace('SUMMARY_TABLE', create_summary(run))
-
-    for t in run.passes:
-        time = "unknown"
-        if t.name in times:
-            time = times[t.name]
-        pass_table += test_result_entry_time(t.name, r.date, time)
-    for t in run.fails:
-        fail_table += test_result_entry(t.name, r.date)
-    for t in run.notruns:
-        notruns_table += test_result_entry(t.name, r.date)
-
-    fail_table = create_test_table(fail_table,
-        "Failures ({} total)".format(len(r.fails)), "failing")
-    pass_table = create_test_table_time(pass_table,
-        "Passing ({} total)".format(len(run.passes)), "passing")
-    notruns_table = create_test_table(notruns_table,
-        "Not run ({} total)".format(len(run.notruns)), "notrun")
-
-    template = template.replace('FAILURE_TABLE', fail_table)
-    template = template.replace('PASS_TABLE', pass_table)
-    template = template.replace('NOTRUNS_TABLE', notruns_table)
-
-    f = open(run.dir + "/index.html", "w")
-    f.write(template)
-    f.close()
-
+env = Environment(loader=FileSystemLoader('.'))
+index_template = env.get_template('template.jinja')
+run_template = env.get_template('testrun-template.jinja')
 
 runs = []
 for (dirpath, subdirs, filenames) in os.walk(os.environ['RESULTS_DIR']):
@@ -255,6 +133,19 @@ tests = {}
 for r in runs:
     times = parse_check_time(r.dir + "/check.time")
     parse_check_log(r, tests)
-    create_run_page(r, times)
+    f = open(r.dir + "/index.html", "w")
+    f.write(run_template.render(run=r))
+    f.close()
 
-create_index(tests, runs)
+fails = []
+passes = []
+for k,v in tests.items():
+    v.sort_results()
+    if len(v.fails):
+        fails.append(v)
+    elif len(v.passes):
+        passes.append(v)
+
+f = open(os.environ["RESULTS_DIR"] + "/index.html", "w")
+f.write(index_template.render(fails=fails, passes=passes, runs=runs))
+f.close()
