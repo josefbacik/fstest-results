@@ -27,9 +27,9 @@ class Test:
             raise Exception("Invalid test status")
 
     def sort_results(self):
-        self.passes = sorted(self.passes, key=lambda r: r.date)
-        self.notruns = sorted(self.notruns, key=lambda r: r.date)
-        self.fails = sorted(self.fails, key=lambda r: r.date)
+        self.passes = sorted(self.passes, key=lambda r: r.date, reverse=True)
+        self.notruns = sorted(self.notruns, key=lambda r: r.date, reverse=True)
+        self.fails = sorted(self.fails, key=lambda r: r.date, reverse=True)
 
     def __repr__(self):
         return 'name={} passes={} notruns={} fails={}'.format(self.name,
@@ -130,7 +130,7 @@ for (dirpath, subdirs, filenames) in os.walk(os.environ['RESULTS_DIR']):
         vals = dirpath.split('/')
         runs.append(TestRun(dirpath, vals[-4], vals[-3], vals[-2], vals[-1]))
 
-runs = sorted(runs, key=lambda r: r.date)
+runs = sorted(runs, key=lambda r: r.date, reverse=True)
 tests = {}
 for r in runs:
     times = parse_check_time(r.dir + "/check.time")
@@ -150,7 +150,7 @@ for k,v in tests.items():
         passes.append(v)
 
     test_runs = v.passes + v.fails
-    test_runs = sorted(test_runs, key=lambda r: r.date)
+    test_runs = sorted(test_runs, key=lambda r: r.date, reverse=True)
 
     try:
         os.mkdir(os.environ["RESULTS_DIR"] + "/" + os.path.dirname(k))
