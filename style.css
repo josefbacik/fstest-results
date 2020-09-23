@@ -33,11 +33,6 @@ table.runs {
 	max-width: 700px;
 }
 
-table.runs_time {
-	float: left;
-	max-width: 900px;
-}
-
 th {
 	height: 50px;
 }

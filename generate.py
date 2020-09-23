@@ -144,7 +144,7 @@ fails = []
 passes = []
 for k,v in tests.items():
     v.sort_results()
-    if len(v.fails):
+    if len(v.fails) and v.recent():
         fails.append(v)
     elif len(v.passes):
         passes.append(v)
