@@ -161,6 +161,11 @@ for k,v in tests.items():
     f.write(test_template.render(test=v, runs=test_runs))
     f.close()
 
+recent_runs = []
+for r in runs:
+    if r.recent():
+        recent_runs.append(r)
+
 f = open(os.environ["RESULTS_DIR"] + "/index.html", "w")
-f.write(index_template.render(fails=fails, passes=passes, runs=runs))
+f.write(index_template.render(fails=fails, passes=passes, runs=recent_runs))
 f.close()

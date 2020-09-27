@@ -10,7 +10,7 @@
     <th>Username</th><th>Hostname</th><th>Configuration</th><th>Tests Run</th>
     <th>Tests Failed</th><th>Date</th>
   </tr>
-  {% for r in runs[:10] %}
+  {% for r in runs %}
     <tr>
       <td>{{ r.username }}</td><td>{{ r.hostname }}</td><td>{{ r.config }}</td>
       <td>{{ r.total_run() }}</td><td>{{ r.fails|length }}</td>
