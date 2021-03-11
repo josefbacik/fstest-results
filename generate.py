@@ -31,6 +31,34 @@ class Test:
         self.notruns = sorted(self.notruns, key=lambda r: r.date, reverse=True)
         self.fails = sorted(self.fails, key=lambda r: r.date, reverse=True)
 
+    def regression(self):
+        if len(self.fails) == 0:
+            return False
+        if not self.fails[0].recent():
+            return False
+        if len(self.passes) == 0:
+            return False
+        combined = self.passes + self.fails
+        combined = sorted(combined, key=lambda r: r.date, reverse=True)
+
+        # First thing was pass, either we fixed it or test is flakey
+        if combined[0] in self.passes:
+            return False
+
+        start_date = None
+        for r in combined:
+            if r in self.fails:
+                if start_date:
+                    return False
+                continue
+            if not start_date:
+                start_date = r.date
+                continue
+            delta = start_date - r.date
+            if delta.days >= 7:
+                return True
+        return True
+
     def __repr__(self):
         return 'name={} passes={} notruns={} fails={}'.format(self.name,
                 len(self.passes), len(self.notruns), len(self.fails))
@@ -142,10 +170,13 @@ for r in runs:
 
 fails = []
 passes = []
+regressions = []
 for k,v in tests.items():
     v.sort_results()
     if len(v.fails) and v.fails[0].recent():
         fails.append(v)
+        if v.regression():
+            regressions.append(v)
     elif len(v.passes):
         passes.append(v)
 
@@ -167,5 +198,6 @@ for r in runs:
         recent_runs.append(r)
 
 f = open(os.environ["RESULTS_DIR"] + "/index.html", "w")
-f.write(index_template.render(fails=fails, passes=passes, runs=recent_runs))
+f.write(index_template.render(fails=fails, passes=passes, runs=recent_runs,
+                              regressions=regressions))
 f.close()
