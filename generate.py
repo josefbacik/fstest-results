@@ -177,7 +177,7 @@ for k,v in tests.items():
         for f in v.fails:
             if not f.recent():
                 break
-            if f.dmesg_output():
+            if f.dmesg_output(v.name):
                 dmesg_fails.append(v)
                 break
     elif len(v.passes):
