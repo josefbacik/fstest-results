@@ -34,6 +34,20 @@
 </table>
 <table class="results">
   <tr class="failing">
+    <th colspan="2">Dmesg failures ({{ dmesg_fails|length }} total)</th>
+  </tr>
+  <tr>
+    <th>Name</th><th>date</th>
+  </tr>
+  {% for t in dmesg_fails %}
+    <tr>
+      <td><a href="/{{ t.name + ".html" }}">{{ t.name }}</a></td>
+      <td><a href="{{ t.fails[0].link_path() }}">{{ t.fails[0].date }}</a></td>
+    </tr>
+  {% endfor %}
+</table>
+<table class="results">
+  <tr class="failing">
     <th colspan="2">Failures ({{ fails|length }} total)</th>
   </tr>
   <tr>

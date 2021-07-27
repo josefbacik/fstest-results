@@ -41,10 +41,6 @@ class Test:
         combined = self.passes + self.fails
         combined = sorted(combined, key=lambda r: r.date, reverse=True)
 
-        # First thing was pass, either we fixed it or test is flakey
-        if combined[0] in self.passes:
-            return False
-
         start_date = None
         for r in combined:
             if r in self.fails:
@@ -171,12 +167,19 @@ for r in runs:
 fails = []
 passes = []
 regressions = []
+dmesg_fails = []
 for k,v in tests.items():
     v.sort_results()
     if len(v.fails) and v.fails[0].recent():
         fails.append(v)
         if v.regression():
             regressions.append(v)
+        for f in v.fails:
+            if not f.recent():
+                break
+            if f.dmesg_output():
+                dmesg_fails.append(v)
+                break
     elif len(v.passes):
         passes.append(v)
 
@@ -199,5 +202,5 @@ for r in runs:
 
 f = open(os.environ["RESULTS_DIR"] + "/index.html", "w")
 f.write(index_template.render(fails=fails, passes=passes, runs=recent_runs,
-                              regressions=regressions))
+                              regressions=regressions, dmesg_fails=dmesg_fails))
 f.close()
