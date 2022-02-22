@@ -157,7 +157,11 @@ for (dirpath, subdirs, filenames) in os.walk(os.environ['RESULTS_DIR']):
 runs = sorted(runs, key=lambda r: r.date, reverse=True)
 tests = {}
 for r in runs:
-    times = parse_check_time(r.dir + "/check.time")
+    try:
+       times = parse_check_time(r.dir + "/check.time")
+    except:
+        times = []
+        print(f'{r.dir} has an invalid check.time')
     r.times = times
     parse_check_log(r, tests)
     f = open(r.dir + "/index.html", "w")
