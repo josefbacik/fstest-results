@@ -115,6 +115,11 @@ def parse_check_log(run, tests):
     with open(run.dir + "/check.log") as fp:
         for line in fp:
             v = line.split(' ')
+
+            # The last element has a newline, strip that off
+            last = v.pop()
+            v.append(last.rstrip())
+
             if v[0] == "Ran:":
                 ran = v[1:]
             elif v[0] == "Not":
@@ -122,18 +127,17 @@ def parse_check_log(run, tests):
             elif v[0] == "Failures:":
                 failed = v[1:]
     for i in ran:
-        k = i.rstrip()
-        if k not in tests:
-            tests[k] = Test(k)
+        if i not in tests:
+            tests[i] = Test(i)
         if i in failed:
-            tests[k].add_result(run, Test.FAIL)
-            run.add_result(tests[k], Test.FAIL)
+            tests[i].add_result(run, Test.FAIL)
+            run.add_result(tests[i], Test.FAIL)
         elif i in notrun:
-            tests[k].add_result(run, Test.NOTRUN)
-            run.add_result(tests[k], Test.NOTRUN)
+            tests[i].add_result(run, Test.NOTRUN)
+            run.add_result(tests[i], Test.NOTRUN)
         else:
-            tests[k].add_result(run, Test.PASS)
-            run.add_result(tests[k], Test.PASS)
+            tests[i].add_result(run, Test.PASS)
+            run.add_result(tests[i], Test.PASS)
 
 def parse_check_time(filename):
     ret = {}
