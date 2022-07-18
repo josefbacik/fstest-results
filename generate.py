@@ -98,6 +98,11 @@ class TestRun:
     def total_run(self):
         return len(self.fails) + len(self.notruns) + len(self.passes)
 
+    def has_commits(self):
+        if os.path.exists(self.dir + "/commits.html"):
+            return True
+        return False
+
     def bad_output(self, testname):
         if os.path.exists(self.dir + "/{}.out.bad.html".format(testname)):
             return True

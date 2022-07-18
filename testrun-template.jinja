@@ -14,6 +14,9 @@
       <tr><td>Pass</td><td>{{ run.passes|length }}</td></tr>
       <tr><td>Fails</td><td>{{ run.fails|length }}</td></tr>
       <tr><td>Not Run</td><td>{{ run.notruns|length }}</td></tr>
+      {% if run.has_commits() %}
+          <tr><td>Commits</td><td><a href="commits.html">Here</a></td></tr>
+      {% endif %}
     </table>
   </div>
   <div>

@@ -22,6 +22,13 @@ copy_dir() {
 	tac ${_dir}/check.log | sed -e '/^Ran/q' | tac > ${_target}/check.log
 	cp ${_dir}/check.time ${_target}
 
+	if [ -f ${XFSTESTS_DIR}/commits ]
+	then
+		cat header > ${_target}/commits.html
+		cat ${XFSTESTS_DIR}/commits >> ${_target}/commits.html
+		cat footer >> ${_target}/commits.html
+	fi
+
 	for i in $(find ${_dir} \( -name "*.dmesg" -o -name "*.bad" \))
 	do
 		_path=${i#$_dir/}
